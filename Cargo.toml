@@ -1,0 +1,8 @@
+[package]
+name = "NeuralNetwork"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+matrix={version = "0.1.0", path = "./matrix"}
+network={version = "0.1.0", path = "./network"}
