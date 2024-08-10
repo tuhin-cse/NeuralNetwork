@@ -34,35 +34,38 @@ impl Network {
     }
 
     pub fn feedforward(&mut self, input: Matrix) -> Matrix {
-        self.data.push(input);
+        assert_eq!(self.layers[0], input.data.len(), "Invalid Number of Inputs");
+        let mut current = input;
+        self.data = vec![current.clone()];
         for i in 0..self.layers.len() - 1 {
-            let z = self.weights[i].mul(&self.data[i]).add(&self.biases[i]);
-            let a = z.map(self.activation.func);
-            self.data.push(a);
+            current = self.weights[i].mul(&current).add(&self.biases[i]).map(self.activation.func);
+            self.data.push(current.clone());
         }
-        self.data[self.data.len() - 1].clone()
+        current
     }
 
-    pub fn backpropagation(&mut self, target: Matrix) {
-        let mut errors = Vec::new();
-        let mut deltas = Vec::new();
-        let mut gradients = Vec::new();
-        let a = self.data[self.data.len() - 1].clone();
-        let error = target.sub(&a);
-        let delta = error.map(self.activation.derivative);
-        errors.push(error);
-        deltas.push(delta);
+    pub fn backpropagation(&mut self, output: Matrix, target: Matrix) {
+        let mut error = target.sub(&output);
+        let mut greadients = output.clone().map(self.activation.derivative);
         for i in (0..self.layers.len() - 1).rev() {
-            let a = self.data[i].clone();
-            let z = self.weights[i].mul(&a).add(&self.biases[i]);
-            let gradient = z.map(self.activation.derivative);
-            gradients.push(gradient);
-            let delta = deltas[deltas.len() - 1].hadamard(&gradients[gradients.len() - 1]);
-            deltas.push(delta.clone());
-            let nabla_w = delta.mul(&a.transpose());
-            let nabla_b = delta.clone();
-            self.weights[i] = self.weights[i].add(&nabla_w.mul_scalar(self.learning_rate));
-            self.biases[i] = self.biases[i].add(&nabla_b.mul_scalar(self.learning_rate));
+            greadients = greadients.hadamard(&error).mul_scalar(self.learning_rate);
+            self.weights[i] = self.weights[i].add(&greadients.mul(&self.data[i].transpose()));
+            self.biases[i] = self.biases[i].add(&greadients);
+            error = self.weights[i].transpose().mul(&error);
+            greadients = self.data[i].map(self.activation.derivative);
+        }
+    }
+
+
+    pub fn train(&mut self, inputs: Vec<Vec<f64>>, targets: Vec<Vec<f64>>, epochs: usize) {
+        for ep in 0..epochs {
+            println!("\x1BcEpoch: {}/{}", ep + 1, epochs);
+            for i in 0..inputs.len() {
+                let input = Matrix::from_array(&*inputs[i].clone());
+                let target = Matrix::from_array(&*targets[i].clone());
+                let output = self.feedforward(input.clone());
+                self.backpropagation(output, target);
+            }
         }
     }
 }

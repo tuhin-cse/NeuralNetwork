@@ -53,6 +53,9 @@ impl Matrix {
     }
 
     pub fn sub(&self, other: &Matrix) -> Matrix {
+        if(self.rows != other.rows || self.cols != other.cols) {
+            panic!("Matrices must have the same dimensions");
+        }
         let mut result = Matrix::new(self.rows, self.cols);
         for i in 0..self.rows {
             for j in 0..self.cols {
@@ -63,6 +66,9 @@ impl Matrix {
     }
 
     pub fn mul(&self, other: &Matrix) -> Matrix {
+        if(self.cols != other.rows) {
+            panic!("Columns of A must match rows of B");
+        }
         let mut result = Matrix::new(self.rows, other.cols);
         for i in 0..self.rows {
             for j in 0..other.cols {
